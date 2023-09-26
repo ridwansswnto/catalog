@@ -1,0 +1,589 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: devxp-app
+  title: DevXP Web Application
+  description: Create a new Web Application
+  tags:
+    - go
+    - golang
+    - recommended
+    - website
+    - component
+    - helm
+spec:
+  owner: group:sre-team
+  type: component
+
+  parameters:
+    - title: Provide some simple information
+      required:
+        - component_id
+        - system
+        - lifecycle
+        - appGroup
+        - type
+      properties:
+        component_id:
+          title: Name
+          type: string
+          pattern: "^([a-z0-9\\-]+)$"
+          description: Unique name of the component
+          ui:field: EntityNamePicker
+          ui:autofocus: true
+        description:
+          title: Description
+          type: string
+          description: Help others understand what this website is for.
+        repoVisibility:
+          title: Set Repository Visibility
+          type: string
+          description: Set the visibility of repositorie.
+          default: public
+          enum:
+            - public
+            - internal
+        language:
+          title: Language
+          description: 'Application Language'
+          type: string
+          default: golang
+          enum:
+            - golang
+            - python
+            - php
+        system:
+          title: System
+          type: string
+          description: System of the component
+          ui:field: EntityPicker
+          ui:options:
+            allowedKinds:
+              - System
+            defaultKind: System
+        lifecycle:
+          title: Lifecycle
+          description: 'Application lifecycle'
+          type: string
+          default: experimental
+          enum:
+            - deprecated
+            - experimental
+            - production
+        type:
+          title: Type
+          description: 'Application type'
+          type: string
+          default: service
+          enum:
+            - service
+            - website
+            - library
+        appGroup:
+          title: Application Owner Group
+          type: string
+          description: Owner of the component
+          ui:field: OwnerPicker
+          ui:options:
+            allowedKinds:
+              - Group
+
+    - title: Choose a location
+      required:
+        - repoUrl
+      properties:
+        repoUrl:
+          title: Repository Location
+          type: string
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedHosts:
+              - github.com
+            allowedOwners:
+              - devxp-tech
+              - diegoluisi
+            # allowedRepos:
+            #   - ${{ parameters.component_id }}
+
+    - title: Kubernetes Parameters
+      description: Set Kubernetes Deployment parameterts
+      properties:
+        kubernetes:
+          title: Enable Kubernetes Deployment
+          description: Checking this will also create Kubernetes Deployment
+          properties:
+            enabled:
+              title: enabled
+              description: Checking this will also create Kubernetes Deployment
+              type: boolean
+              default: true
+
+            # env:
+            #   title: Environment
+            #   description: 'Environment to create resources'
+            #   properties:
+            #     name:
+            #       title: Select environments
+            #       type: array
+            #       items:
+            #         type: string
+            #         default: development
+            #         enum:
+            #           - development
+            #           - staging
+            #           - production
+            #       uniqueItems: true
+            #       ui:widget: checkboxes
+
+            autoscaling:
+              title: Autoscaling
+              description: Autoscaling Properties
+              properties:
+                enabled:
+                  title: enabled
+                  description: Enable autoscaling
+                  type: boolean
+                  default: true
+                minReplicas:
+                  title: minReplicas
+                  description: Set min Replicas
+                  type: integer
+                  default: 1
+                maxReplicas:
+                  title: maxReplicas
+                  description: Set max Replicas
+                  type: integer
+                  default: 2
+                targetCPUUtilizationPercentage:
+                  title: targetCPUUtilizationPercentage
+                  description: Set target CPU Utilization Percentage
+                  type: integer
+                  default: 80
+
+            resources:
+              title: Resources
+              description: Resources Properties
+              properties:
+                requests:
+                  title: requests
+                  description: Set requests
+                  properties:
+                    memory:
+                      title: memory
+                      description: Set Memory requests
+                      type: string
+                      default: 64Mi
+                    cpu:
+                      title: cpu
+                      description: Set CPU requests
+                      type: string
+                      default: 50m
+                limits:
+                  title: limits
+                  description: Set limits
+                  properties:
+                    memory:
+                      title: memory
+                      description: Set Memory limits
+                      type: string
+                      default: 128Mi
+                    cpu:
+                      title: cpu
+                      description: Set CPU limits
+                      type: string
+                      default: 100m
+
+            network:
+              title: Networking
+              description: Network Settings
+              properties:
+                enabled:
+                  title: Ingress Enabled
+                  description: Ingress Enabled
+                  type: boolean
+                  default: true
+                domain:
+                  title: Service Domain
+                  description: Service Domain
+                  type: string
+                  default: devxp-tech.io
+                  enum:
+                    - devxp-tech.io
+                    - diegoluisi.eti.br
+                type:
+                  title: Service Type
+                  description: Service Type
+                  type: string
+                  default: ClusterIP
+                  enum:
+                    - ClusterIP
+                    - LoadBalancer
+                port:
+                  title: Port
+                  description: Service Port
+                  type: integer
+                  default: 80
+
+            probe:
+              title: Health Check
+              description: Health Check Properties
+              properties:
+                enabled:
+                  title: enabled
+                  description: Enable Probe
+                  type: boolean
+                  default: true
+                livenessProbe:
+                  title: Liveness Probe
+                  description: Set Liveness Probe
+                  properties:
+                    path:
+                      title: path
+                      description: Application Path
+                      type: string
+                      default: /health-check/liveness
+                    port:
+                      title: port
+                      description: Application Port
+                      type: integer
+                      default: 8080
+                readinessProbe:
+                  title: Readiness Probe
+                  description: Set Readiness Probe
+                  properties:
+                    path:
+                      title: path
+                      description: Application Path
+                      type: string
+                      default: /health-check/readiness
+                    port:
+                      title: port
+                      description: Application Port
+                      type: integer
+                      default: 8080
+
+            deploy:
+              title: Deployment Type
+              description: ArgoCD Rollout or Deployment
+              properties:
+                enabled:
+                  title: Argo Rollout
+                  description: Enabled Argo Rollout
+                  type: boolean
+                  default: true
+                strategy:
+                  title: Argo Rollout Strategy
+                  description: Set Deployment Strategy
+                  type: string
+                  default: Canary
+                  enum:
+                    - BlueGreen
+                    - Canary
+
+            sa:
+              title: Service Account
+              description: Create a service account
+              properties:
+                enabled:
+                  title: Service Account
+                  description: Create a Service Account
+                  type: boolean
+                  default: true
+
+            quota:
+              title: Quota Enabled
+              description: Enabled Resources Quota
+              properties:
+                enabled:
+                  title: Enable Quota
+                  description: Create Resources Quota
+                  type: boolean
+                  default: true
+                requests:
+                  title: Requests
+                  description: Set Requests
+                  properties:
+                    cpu:
+                      title: cpu
+                      description: Set CPU Requests
+                      type: integer
+                      default: 1
+                    memory:
+                      title: memory
+                      description: Set Memory Requests
+                      type: string
+                      default: 1Gi
+                limits:
+                  title: Limits
+                  description: Set Limits
+                  properties:
+                    cpu:
+                      title: cpu
+                      description: Set CPU Limits
+                      type: integer
+                      default: 2
+                    memory:
+                      title: memory
+                      description: Set Memory Limits
+                      type: string
+                      default: 2Gi
+
+    - title: Infrastructure Parameters
+      description: Create Infrastrucuture Resources
+      properties:
+        infra:
+          title: Create Infrastructure Resources
+          description: Checking this will also create Infrastrcuture Resources
+          properties:
+            enabled:
+              title: enabled
+              description: Checking this will also create Infrastructure Resorces
+              type: boolean
+              default: false
+
+            Bucket:
+              title: AWS S3 Bucket
+              description: An Bucket is a managed resource that represents an AWS S3 Bucket.
+              properties:
+                enabled:
+                  title: Enable S3 Bucket
+                  description: Create S3 Bucket
+                  type: boolean
+                  default: false
+                acl:
+                  title: Set S3 ACL
+                  description: Set S3 ACL
+                  type: string
+                  default: private
+                  enum:
+                    - private
+                    - public
+                locationConstraint:
+                  title: Set S3 locationConstraint
+                  description: Set S3 locationConstraint
+                  type: string
+                  default: us-east-1
+                  enum:
+                    - us-east-1
+
+            RDSInstance:
+              title: AWS RDSInstance
+              description: Set RDSInstance Parameters
+              properties:
+                enabled:
+                  title: Enable RDSInstance
+                  description: Create RDSInstance
+                  type: boolean
+                  default: false
+                allocatedStorage:
+                  title: allocatedStorage
+                  description: allocatedStorage
+                  type: integer
+                  default: 10
+                dbInstanceClass:
+                  title: Set RDSInstance dbInstanceClass
+                  description: Set RDSInstance dbInstanceClass
+                  type: string
+                  default: db.t2.small
+                  enum:
+                    - db.t2.small
+                    - db.t2.medium
+                engine:
+                  title: engine
+                  description: Set RDSInstance engine
+                  type: string
+                  default: mysql
+                  enum:
+                    - mysql
+                    - postgres
+                region:
+                  title: Set RDSInstance region
+                  description: Set region
+                  type: string
+                  default: us-east-1
+                  enum:
+                    - us-east-1
+                publiclyAccessible:
+                  title: Enable RDSInstance publiclyAccessible
+                  description: publiclyAccessible
+                  type: boolean
+                  default: true
+
+    - title: Dry Run
+      description: Only perform a dry run, don't publish anything
+      properties:
+        dryRun:
+          title: Only perform a dry run, don't publish anything
+          type: boolean
+          default: false
+
+  steps:
+    - id: template
+      name: Fetch Application Template
+      if: ${{ parameters.kubernetes.enabled == true }}
+      action: fetch:template
+      cookiecutterCompat: true
+      input:
+        url: https://github.com/devxp-tech/template-${{ parameters.language }}
+        copyWithoutTemplating:
+          - .github/workflows/*
+        values:
+          component_id: ${{ parameters.component_id }}
+          system: ${{ parameters.system }}
+          description: ${{ parameters.description }}
+          destination: ${{ parameters.repoUrl | parseRepoUrl }}
+          appGroup: ${{ parameters.appGroup }}
+          owner: ${{ parameters.owner }}
+          lifecycle: ${{ parameters.lifecycle }}
+          type: ${{ parameters.type }}
+          env: dev
+          kubernetes:
+            network:
+              domain: ${{ parameters.kubernetes.network.domain }}
+
+
+    - id: publish
+      name: Publish Application
+      action: publish:github
+      if: ${{ parameters.dryRun !== true }}
+      input:
+        allowedHosts:
+          - github.com
+        description: This is ${{ parameters.component_id }}
+        repoUrl: ${{ parameters.repoUrl }}
+        defaultBranch: main
+        repoVisibility: ${{ parameters.repoVisibility }}
+        deleteBranchOnMerge: true
+        allowMergeCommit: false
+        allowSquashMerge: true
+        allowRebaseMerge: false
+        protectEnforceAdmins: false
+        dismissStaleReviews: true
+        requiredApprovingReviewCount: 2
+        requireCodeOwnerReviews: true
+        requireBranchesToBeUpToDate: true
+        requiredConversationResolution: true
+        collaborators:
+          - team: sre-team
+            access: maintain
+          - team: dba-team
+            access: write
+          - team: ${{ parameters.appGroup }}
+            access: push
+        topics: ['backstage-include', '${{ parameters.lifecycle }}', '${{ parameters.language }}']
+        # token: ${{ secrets.USER_OAUTH_TOKEN }}
+        # gitAuthorName: ":robot: backstage-bot"
+        # gitAuthorEmail: bot@devxp-tech.io
+        # gitCommitMessage: ":robot: First Commit"
+
+    - id: fetch-kubernetes
+      name: Fetch Kubernetes Templates
+      action: fetch:template
+      if: ${{ parameters.kubernetes.enabled == true }}
+      input:
+        targetPath: ./kubernetes
+        url: https://github.com/devxp-tech/backstage-skeleton/tree/main/kubernetes/apps/devxp-app
+        values:
+          component_id: ${{ parameters.component_id }}
+          description: ${{ parameters.description }}
+          destination: ${{ parameters.repoUrl | parseRepoUrl }}
+          appGroup: ${{ parameters.appGroup }}
+          kubernetes:
+            enabled: ${{ parameters.kubernetes.enabled }}
+            autoscaling:
+              enabled: ${{ parameters.kubernetes.autoscaling.enabled }}
+              minReplicas: ${{ parameters.kubernetes.autoscaling.minReplicas }}
+              maxReplicas: ${{ parameters.kubernetes.autoscaling.maxReplicas }}
+              targetCPUUtilizationPercentage: ${{ parameters.kubernetes.autoscaling.targetCPUUtilizationPercentage }}
+            resources:
+              requests:
+                memory: ${{ parameters.kubernetes.resources.requests.memory }}
+                cpu: ${{ parameters.kubernetes.resources.requests.cpu }}
+              limits:
+                memory: ${{ parameters.kubernetes.resources.limits.memory }}
+                cpu: ${{ parameters.kubernetes.resources.limits.cpu }}
+            network:
+              enabled: ${{ parameters.kubernetes.network.enabled }}
+              domain: ${{ parameters.kubernetes.network.domain }}
+              type: ${{ parameters.kubernetes.network.type }}
+              port: ${{ parameters.kubernetes.network.port }}
+            probe:
+              enabled: ${{ parameters.kubernetes.probe.enabled }}
+              livenessProbe:
+                path: ${{ parameters.kubernetes.probe.livenessProbe.path }}
+                port: ${{ parameters.kubernetes.probe.livenessProbe.port }}
+              readinessProbe:
+                path: ${{ parameters.kubernetes.probe.readinessProbe.path }}
+                port: ${{ parameters.kubernetes.probe.readinessProbe.port }}
+            deploy:
+              enabled: ${{ parameters.kubernetes.probe.enabled }}
+            sa:
+              enabled: ${{ parameters.kubernetes.sa.enabled }}
+            quota:
+              enabled: ${{ parameters.kubernetes.quota.enabled }}
+              requests:
+                memory: ${{ parameters.kubernetes.quota.requests.memory }}
+                cpu: ${{ parameters.kubernetes.quota.requests.cpu }}
+              limits:
+                memory: ${{ parameters.kubernetes.quota.limits.memory }}
+                cpu: ${{ parameters.kubernetes.quota.limits.cpu }}
+          infra:
+            enabled: ${{ parameters.infra.enabled }}
+            Bucket:
+              enabled: ${{ parameters.infra.Bucket.enabled }}
+            RDSInstance:
+              enabled: ${{ parameters.infra.RDSInstance.enabled }}
+
+
+    - id: gitops
+      name: "Open PR in GitOps Repository"
+      action: publish:github:pull-request
+      if: ${{ parameters.kubernetes.enabled == true }}
+      input:
+        repoUrl: github.com?repo=gitops&owner=devxp-tech
+        branchName: backstage/${{ parameters.component_id }}
+        title: '[ci skip] :robot: Create new App ${{ parameters.component_id }}'
+        description: |
+          # ✨ New project: ${{ parameters.component_id }}
+          🤖 This project is created by [Backstage](https://backstage.diegoluisi.eti.br/catalog/default/component/${{ parameters.component_id }})
+
+          📝 ${{ parameters.description if parameters.description }}
+
+          👨‍🚀 Mr. SRE @devxp-tech/sre-team, please aprrove this PR to create our project.
+
+          🚀 Run this workflow [First Release](https://github.com/devxp-tech/${{ parameters.component_id }}/actions/workflows/first-release.yaml) to create our first deploy.
+        sourcePath: kubernetes
+        targetPath: apps
+
+    - id: register
+      name: Register Application in Catalog
+      action: catalog:register
+      if: ${{ parameters.dryRun !== true }}
+      input:
+        repoContentsUrl: ${{ steps.publish.output.repoContentsUrl }}
+        catalogInfoPath: "/catalog-info.yaml"
+
+    - id: run-first-release
+      name: Run First Release
+      action: github:actions:dispatch
+      if: ${{ parameters.dryRun !== true }}
+      input:
+        repoUrl: github.com?repo=${{ parameters.component_id }}&owner=devxp-tech
+        workflowId: first-release.yaml
+        branchOrTagName: main
+
+    # - name: Results
+    #   if: ${{ parameters.dryRun }}
+    #   action: debug:log
+    #   input:
+    #     listWorkspace: true
+
+  output:
+    links:
+      - title: Repository
+        url: ${{ steps.publish.output.remoteUrl }}
+      - title: GitOps Pull Request
+        url: ${{ steps.gitops.output.remoteUrl }}
+      - title: Open Catalog
+        icon: catalog
+        entityRef: ${{ steps.register.output.entityRef }}
